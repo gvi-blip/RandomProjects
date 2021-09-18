@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 
+    'self' 'unsafe-inline' 'unsafe-eval' 'unsafe-hashes' https://api.razorpay.com https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js https://checkout.razorpay.com/v1/checkout.js;
+    style-src 'self' 'unsafe-inline'"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <title>Add to FASTag Wallet</title>
+    <style>
+      body {
+        background-color: #000000;
+      }
+      #label {
+        color: #fff;
+        text-align: center;
+      }
+      .container {
+        height: 100vh;
+        width: 100vw;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      label,
+      input {
+        margin: 10px;
+        font-size: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="middle-box">
+        <form class="form">
+          <label for="fname" id="label">Amount</label><br />
+          <input type="text" id="amount" name="fname" /><br />
+          <input type="submit" id="submit" value="Add to Wallet" />
+        </form>
+      </div>
+    </div>
+    <script>
+      document.getElementById('submit').onclick = function (e) {
+        // rzp1.open();
+        //const amount = document.getElementById('amount').value;
+        const amount = document.getElementById('amount').value;
+        axios
+          .post('http://localhost:3000/api/v1/user/getorderid', {
+            amount
+          })
+          .then((info) => {
+            console.log(info);
+            const options = {
+              key: 'rzp_test_FNF2eYRci7mIJ6', // Enter the Key ID generated from the Dashboard
+              amount: amount,
+              name: 'GVI Tech',
+              description: 'Test Transaction',
+              image:
+                'https://i.pinimg.com/originals/81/61/14/816114f77c79b07ace4acf762bb2cd16.jpg',
+              order_id: info.data.order_id, //This is a sample Order ID. Pass the `id` obtained in the previous step
+              handler: function (response) {
+                // alert(response.razorpay_payment_id);
+                // alert(response.razorpay_order_id);
+                // alert(response.razorpay_signature);
+
+                axios
+                  .post('http://localhost:3000/api/v1/user/updateUserbalance', {
+                    ...response
+                  })
+                  .then((res) => {
+                    console.log(res);
+                  })
+                  .catch((err) => {
+                    console.log(error);
+                  });
+              },
+              //callback_url: '/api/v1/user/updateUserBalance',
+              // prefill: {
+              //   name: 'Gaurav Kumar',
+              //   email: 'gaurav.kumar@example.com',
+              //   contact: '9999999999'
+              // },
+              notes: {
+                address: 'Razorpay Corporate Office'
+              },
+              theme: {
+                color: '#3399cc'
+              }
+            };
+
+            const rzp1 = new Razorpay(options);
+            rzp1.on('payment.failed', function (response) {
+              // alert(response.error.code);
+              // alert(response.error.description);
+              // alert(response.error.source);
+              // alert(response.error.step);
+              // alert(response.error.reason);
+              // alert(response.error.metadata.order_id);
+              // alert(response.error.metadata.payment_id);
+
+              axios
+                .post('http://localhost:3000/api/v1/user/updateUserbalance', {
+                  ...response
+                })
+                .then((info) => {
+                  console.log(info);
+                })
+                .catch((error) => {
+                  console.log(error);
+                });
+            });
+            rzp1.open();
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+        e.preventDefault();
+      };
+    </script>
+  </body>
+</html>
